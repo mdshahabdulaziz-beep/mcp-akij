@@ -1,0 +1,50 @@
+{
+  "name": "akij-hr-data-mcp",
+  "version": "1.0.0",
+  "description": "Read-only remote MCP server exposing the AKIJ HR DATA Google Drive repository over Streamable HTTP.",
+  "main": "dist/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "google-drive",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "csv-parse": "^7.0.2",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "googleapis": "^174.0.1",
+    "mammoth": "^1.12.1",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.2.0",
+    "@types/supertest": "^7.2.1",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "@types/node": "^26.2.0"
+  }
+}

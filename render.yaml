@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: akij-hr-data-mcp
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: GOOGLE_DRIVE_FOLDER_ID
+        value: 1oxYLPcC9MPVuxsbeP0kGgYhLmkxt0w2o
+      - key: GCP_KEY_BASE64
+        sync: false
+      - key: API_KEYS
+        sync: false
