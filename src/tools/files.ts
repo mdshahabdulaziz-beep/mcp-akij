@@ -74,7 +74,7 @@ export function makeGetFileContentTool(getDrive: () => GoogleDriveClient) {
     const meta = await drive.getMetadata(file_id);
     const category = categorizeMimeType(meta.mimeType, meta.name);
 
-    if (category === 'txt' || category === 'csv') {
+    if (category === 'txt' || category === 'csv' || category === 'html') {
       const { buffer, file } = await drive.downloadFile(file_id, LIMITS.MAX_PARSE_BYTES);
       const { text, truncated } = truncateText(buffer.toString('utf-8'));
       const payload = { file: summarize(file), category, truncated, content: text };
@@ -126,6 +126,7 @@ export function makeListSupportedFilesTool(getDrive: () => GoogleDriveClient) {
       pdf: [],
       docx: [],
       txt: [],
+      html: [],
       image: [],
       'google-doc': [],
       'google-sheet': [],
@@ -146,6 +147,7 @@ export function makeListSupportedFilesTool(getDrive: () => GoogleDriveClient) {
         PDF: groups.pdf,
         DOCX: groups.docx,
         TXT: groups.txt,
+        HTML: groups.html,
         Images: groups.image,
         GoogleDocs: groups['google-doc'],
         GoogleSheets: groups['google-sheet'],

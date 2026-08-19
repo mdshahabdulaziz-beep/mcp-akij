@@ -1,4 +1,4 @@
-export type FileCategory = 'excel' | 'csv' | 'pdf' | 'docx' | 'txt' | 'image' | 'google-doc' | 'google-sheet' | 'google-slide' | 'other';
+export type FileCategory = 'excel' | 'csv' | 'pdf' | 'docx' | 'txt' | 'html' | 'image' | 'google-doc' | 'google-sheet' | 'google-slide' | 'other';
 
 const EXCEL_MIME_TYPES = new Set([
   'application/vnd.ms-excel',
@@ -16,6 +16,8 @@ const DOCX_MIME_TYPES = new Set([
 
 const TXT_MIME_TYPES = new Set(['text/plain']);
 
+const HTML_MIME_TYPES = new Set(['text/html', 'application/xhtml+xml']);
+
 const IMAGE_MIME_PREFIX = 'image/';
 
 const GOOGLE_DOC_MIME = 'application/vnd.google-apps.document';
@@ -29,6 +31,7 @@ export function categorizeMimeType(mimeType: string, fileName?: string): FileCat
   if (PDF_MIME_TYPES.has(mimeType)) return 'pdf';
   if (DOCX_MIME_TYPES.has(mimeType)) return 'docx';
   if (TXT_MIME_TYPES.has(mimeType)) return 'txt';
+  if (HTML_MIME_TYPES.has(mimeType)) return 'html';
   if (mimeType.startsWith(IMAGE_MIME_PREFIX)) return 'image';
   if (mimeType === GOOGLE_DOC_MIME) return 'google-doc';
   if (mimeType === GOOGLE_SHEET_MIME) return 'google-sheet';
@@ -42,6 +45,7 @@ export function categorizeMimeType(mimeType: string, fileName?: string): FileCat
     if (ext === 'pdf') return 'pdf';
     if (ext === 'docx') return 'docx';
     if (ext === 'txt') return 'txt';
+    if (ext === 'html' || ext === 'htm') return 'html';
     if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'tiff'].includes(ext)) return 'image';
   }
   return 'other';
