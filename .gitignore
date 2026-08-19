@@ -11,6 +11,7 @@ dist/
 gcp-key.json
 *.pem
 *.key
+.mcp.json
 
 # Logs
 npm-debug.log*
@@ -24,3 +25,6 @@ Thumbs.db
 
 # Coverage
 coverage/
+
+# Claude Code local state
+.claude/
