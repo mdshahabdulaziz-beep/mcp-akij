@@ -137,9 +137,34 @@ export class GoogleDriveClient {
     }
   }
 
+  /** Lists files directly inside a specific folder (incl. shortcut targets), paginated. */
+  async listFolder(folderId: string, opts: { pageSize: number; pageToken?: string }): Promise<{
+    files: DriveFileSummary[];
+    nextPageToken: string | null;
+  }> {
+    try {
+      const res = await withTimeout(
+        this.drive.files.list({
+          q: `'${folderId}' in parents and trashed = false`,
+          fields: LIST_FIELDS,
+          pageSize: opts.pageSize,
+          pageToken: opts.pageToken,
+          supportsAllDrives: true,
+          includeItemsFromAllDrives: true,
+        }),
+        LIMITS.GOOGLE_API_TIMEOUT_MS,
+        `Drive files.list(${folderId})`,
+      );
+      const files = (res.data.files ?? []).map(normalizeFile);
+      files.forEach((f) => this.membershipCache.set(f.id, true));
+      return { files, nextPageToken: res.data.nextPageToken ?? null };
+    } catch (err) {
+      throw translateGoogleError(err);
+    }
+  }
+
   /** Recursively lists every file under the root folder (used by search/grouping tools). Bounded by maxResults. */
-  async listAllFilesRecursive(maxResults = 1000): Promise<DriveFileSummary[]> {
-    const results: DriveFileSummary[] = [];
+  async listAllFilesRecursive(maxResults = 1000): Promise<DriveFileSummary[]> {    const results: DriveFileSummary[] = [];
     const queue: string[] = [this.rootFolderId];
     const seenFolders = new Set<string>();
 

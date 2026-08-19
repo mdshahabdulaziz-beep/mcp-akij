@@ -21,6 +21,12 @@ export const listSupportedFilesInputSchema = {
   limit: z.number().int().positive().optional().describe('Max number of files to scan when grouping (default 1000).'),
 };
 
+export const listFolderInputSchema = {
+  folder_id: z.string().min(1).describe('The Google Drive folder ID to list (a normal folder or a shortcut target folder).'),
+  limit: z.number().int().positive().optional().describe('Max number of files per page.'),
+  page_token: z.string().optional().describe('Pagination token returned by a previous call.'),
+};
+
 function summarize(file: DriveFileSummary) {
   return {
     id: file.id,
@@ -37,6 +43,27 @@ export function makeListFilesTool(getDrive: () => GoogleDriveClient) {
     const { files, nextPageToken } = await getDrive().listFiles({ pageSize, pageToken: args.page_token });
 
     const payload = {
+      files: files.map(summarize),
+      count: files.length,
+      nextPageToken,
+    };
+
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
+    };
+  };
+}
+
+export function makeListFolderTool(getDrive: () => GoogleDriveClient) {
+  return async (args: { folder_id: string; limit?: number; page_token?: string }) => {
+    const pageSize = clampLimit(args.limit, LIMITS.DEFAULT_PAGE_SIZE, LIMITS.MAX_PAGE_SIZE);
+    const { files, nextPageToken } = await getDrive().listFolder(args.folder_id, {
+      pageSize,
+      pageToken: args.page_token,
+    });
+
+    const payload = {
+      folder_id: args.folder_id,
       files: files.map(summarize),
       count: files.length,
       nextPageToken,

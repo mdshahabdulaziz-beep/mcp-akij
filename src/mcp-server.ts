@@ -9,10 +9,12 @@ import {
   getFileMetadataInputSchema,
   getFileContentInputSchema,
   listSupportedFilesInputSchema,
+  listFolderInputSchema,
   makeListFilesTool,
   makeGetFileMetadataTool,
   makeGetFileContentTool,
   makeListSupportedFilesTool,
+  makeListFolderTool,
 } from './tools/files.js';
 import {
   searchFilesInputSchema,
@@ -108,10 +110,20 @@ export function createMcpServer(getDrive: () => GoogleDriveClient): McpServer {
     'list_supported_files',
     {
       title: 'List Supported Files',
-      description: 'Recursively list all files in the repository, grouped by category: Excel, CSV, PDF, DOCX, TXT, Images, Other.',
+      description: 'Recursively list all files in the repository, grouped by category: Excel, CSV, PDF, DOCX, TXT, HTML, Images, Other.',
       inputSchema: listSupportedFilesInputSchema,
     },
     wrap(makeListSupportedFilesTool(getDrive)),
+  );
+
+  server.registerTool(
+    'list_folder',
+    {
+      title: 'List Folder',
+      description: 'List files directly inside a specific Google Drive folder (including a shortcut target folder). Returns the folder\'s children with pagination.',
+      inputSchema: listFolderInputSchema,
+    },
+    wrap(makeListFolderTool(getDrive)),
   );
 
   server.registerTool(
