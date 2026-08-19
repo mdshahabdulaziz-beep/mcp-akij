@@ -2,7 +2,7 @@ import { google, drive_v3 } from 'googleapis';
 import type { JWT } from 'google-auth-library';
 import { ForbiddenError, NotFoundError, UpstreamApiError, FileTooLargeError } from './utils/errors.js';
 import { LIMITS, withTimeout } from './utils/limits.js';
-import { GOOGLE_FOLDER_MIME } from './utils/mime-types.js';
+import { GOOGLE_FOLDER_MIME, GOOGLE_SHORTCUT_MIME } from './utils/mime-types.js';
 
 export interface DriveFileSummary {
   id: string;
@@ -11,9 +11,11 @@ export interface DriveFileSummary {
   size: string | null;
   modifiedTime: string | null;
   parents: string[];
+  /** Populated for Google Drive shortcuts (target file id). */
+  shortcutTargetId?: string;
 }
 
-const FILE_FIELDS = 'id, name, mimeType, size, modifiedTime, parents';
+const FILE_FIELDS = 'id, name, mimeType, size, modifiedTime, parents, shortcutDetails';
 const LIST_FIELDS = `nextPageToken, files(${FILE_FIELDS})`;
 
 /**
@@ -98,6 +100,15 @@ export class GoogleDriveClient {
     } catch (err) {
       throw translateGoogleError(err, fileId);
     }
+  }
+
+  /** Follows Google Drive shortcut chains to the underlying target file. */
+  private async resolveShortcut(file: DriveFileSummary, depth = 0): Promise<DriveFileSummary> {
+    if (depth > 5 || file.mimeType !== GOOGLE_SHORTCUT_MIME || !file.shortcutTargetId) {
+      return file;
+    }
+    const target = await this.getRawMetadata(file.shortcutTargetId);
+    return this.resolveShortcut(target, depth + 1);
   }
 
   /** Lists files directly inside the configured root folder (non-recursive), paginated. */
@@ -199,12 +210,13 @@ export class GoogleDriveClient {
   }
 
   async getMetadata(fileId: string): Promise<DriveFileSummary> {
-    return this.assertFileInScope(fileId);
+    return this.resolveShortcut(await this.assertFileInScope(fileId));
   }
 
   /** Downloads binary/text file content, enforcing the folder scope and a max byte size. */
   async downloadFile(fileId: string, maxBytes = LIMITS.MAX_DOWNLOAD_BYTES): Promise<{ buffer: Buffer; file: DriveFileSummary }> {
-    const file = await this.assertFileInScope(fileId);
+    const shortcut = await this.assertFileInScope(fileId);
+    const file = await this.resolveShortcut(shortcut);
 
     if (file.size && Number.parseInt(file.size, 10) > maxBytes) {
       throw new FileTooLargeError(
@@ -215,11 +227,11 @@ export class GoogleDriveClient {
     try {
       const res = await withTimeout(
         this.drive.files.get(
-          { fileId, alt: 'media', supportsAllDrives: true },
+          { fileId: file.id, alt: 'media', supportsAllDrives: true },
           { responseType: 'arraybuffer' },
         ),
         LIMITS.GOOGLE_API_TIMEOUT_MS,
-        `Drive files.get(alt=media, ${fileId})`,
+        `Drive files.get(alt=media, ${file.id})`,
       );
       const buffer = Buffer.from(res.data as ArrayBuffer);
       if (buffer.byteLength > maxBytes) {
@@ -236,12 +248,12 @@ export class GoogleDriveClient {
 
   /** Exports a native Google Workspace file (Docs/Sheets/Slides) to a portable format. */
   async exportFile(fileId: string, mimeType: string): Promise<{ buffer: Buffer; file: DriveFileSummary }> {
-    const file = await this.assertFileInScope(fileId);
+    const file = await this.resolveShortcut(await this.assertFileInScope(fileId));
     try {
       const res = await withTimeout(
-        this.drive.files.export({ fileId, mimeType }, { responseType: 'arraybuffer' }),
+        this.drive.files.export({ fileId: file.id, mimeType }, { responseType: 'arraybuffer' }),
         LIMITS.GOOGLE_API_TIMEOUT_MS,
-        `Drive files.export(${fileId})`,
+        `Drive files.export(${file.id})`,
       );
       return { buffer: Buffer.from(res.data as ArrayBuffer), file };
     } catch (err) {
@@ -258,6 +270,7 @@ function normalizeFile(raw: drive_v3.Schema$File): DriveFileSummary {
     size: raw.size ?? null,
     modifiedTime: raw.modifiedTime ?? null,
     parents: raw.parents ?? [],
+    shortcutTargetId: raw.shortcutDetails?.targetId,
   };
 }
 

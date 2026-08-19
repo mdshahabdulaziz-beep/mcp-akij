@@ -24,6 +24,7 @@ const GOOGLE_DOC_MIME = 'application/vnd.google-apps.document';
 const GOOGLE_SHEET_MIME = 'application/vnd.google-apps.spreadsheet';
 const GOOGLE_SLIDE_MIME = 'application/vnd.google-apps.presentation';
 export const GOOGLE_FOLDER_MIME = 'application/vnd.google-apps.folder';
+export const GOOGLE_SHORTCUT_MIME = 'application/vnd.google-apps.shortcut';
 
 export function categorizeMimeType(mimeType: string, fileName?: string): FileCategory {
   if (EXCEL_MIME_TYPES.has(mimeType)) return 'excel';
